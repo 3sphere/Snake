@@ -29,7 +29,7 @@ bool Game::Init()
 	mSnake.reserve(GRID_WIDTH * GRID_HEIGHT);
 	Segment head{ (SCREEN_WIDTH - CELL_SIZE) / 2, (SCREEN_HEIGHT - CELL_SIZE) / 2, 0, 0 };
 	mSnake.push_back(std::move(head));
-
+	//
 	mFruitPos.x = 0;
 	mFruitPos.y = 0;
 

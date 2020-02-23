@@ -16,7 +16,7 @@ struct Vector2i
 
 struct Segment
 {
-	Vector2f pos;
+	Vector2i pos;
 	Vector2i direction;
 };
 
