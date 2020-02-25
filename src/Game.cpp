@@ -1,8 +1,10 @@
 #include "Game.h"
 #include "Constants.h"
+#include <random>
 #include <iostream>
+#include <algorithm>
 
-Game::Game() : mWindow(nullptr), mRenderer(nullptr), mIsRunning(true), mState(GAME_ACTIVE), mScore(0), mHiScore(0), mTicksCount(0) {}
+Game::Game() : mWindow(nullptr), mRenderer(nullptr), mIsRunning(true), mState(GAME_ACTIVE), mScore(0), mHiScore(0), mTicksCount(0), mMoveTimer(TIME_PER_CELL), mResetTimer(4.0f) {}
 
 bool Game::Init()
 {
@@ -11,6 +13,10 @@ bool Game::Init()
 		SDL_Log("Failed to initialise SDL. Error: %s\n", SDL_GetError());
 		return false;
 	}
+
+	mSoundManager.Init();
+
+	mTextGenerator.Init();
 
 	mWindow = SDL_CreateWindow("SDL Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
 	if (!mWindow)
@@ -26,12 +32,16 @@ bool Game::Init()
 		return false;
 	}
 
+	mSoundManager.LoadSoundFromFile(SOUND_ID::EAT_FRUIT, "Sounds/eat_fruit.wav");
+	mSoundManager.LoadSoundFromFile(SOUND_ID::GAME_OVER, "Sounds/game_over.wav");
+
+	mTextGenerator.LoadFont("Fonts/data-latin.ttf", 20);
+
 	mSnake.reserve(GRID_WIDTH * GRID_HEIGHT);
-	Segment head{ (SCREEN_WIDTH - CELL_SIZE) / 2, (SCREEN_HEIGHT - CELL_SIZE) / 2, 0, 0 };
+	Segment head{ GRID_WIDTH / 2, GRID_HEIGHT / 2, 0, 0 };
 	mSnake.push_back(std::move(head));
-	//
-	mFruitPos.x = 0;
-	mFruitPos.y = 0;
+	
+	InitFruit();
 
 	return true;
 }
@@ -72,6 +82,10 @@ void Game::ProcessInput()
 	if (state[SDL_SCANCODE_ESCAPE])
 	{
 		mIsRunning = false;
+	}
+	if (state[SDL_SCANCODE_SPACE])
+	{
+		mState = GAME_ACTIVE;
 	}
 
 	if (state[SDL_SCANCODE_W])
@@ -120,9 +134,31 @@ void Game::Update()
 	}
 
 	mTicksCount = SDL_GetTicks();
-	mSnake[0].direction = mNewDirection;
-	MoveSnake(deltaTime);
-	CheckCollisions();
+
+	if (mState == GAME_ACTIVE)
+	{
+		mMoveTimer -= deltaTime;
+		if (mMoveTimer < 0.0f)
+		{
+			for (Segment& segment : mSnake)
+			{
+				segment.pos.x += segment.direction.x;
+				segment.pos.y += segment.direction.y;
+			}
+			//Update the snake's segments (excluding the head)
+			for (std::vector<Segment>::reverse_iterator iter = mSnake.rbegin(); iter < mSnake.rend() - 1; ++iter)
+			{
+				iter->direction = (iter + 1)->direction;
+			}
+
+			mSnake[0].direction = mNewDirection;
+			
+			CheckCollisions();
+
+			mMoveTimer = TIME_PER_CELL;
+		}
+	}
+	
 }
 
 void Game::Render()
@@ -130,6 +166,12 @@ void Game::Render()
 	//Clear back buffer
 	SDL_SetRenderDrawColor(mRenderer, 0, 0, 0, 255);
 	SDL_RenderClear(mRenderer);
+
+	std::string scoreText = "Score: " + std::to_string(mScore);
+	mTextGenerator.Render(mRenderer, scoreText, 0, 0);
+	scoreText.clear();
+	scoreText = " High score: " + std::to_string(mHiScore);
+	mTextGenerator.Render(mRenderer, scoreText, 0.75 * SCREEN_WIDTH, 0);
 
 	//render grid
 	SDL_SetRenderDrawColor(mRenderer, 76, 76, 76, 255);
@@ -142,59 +184,53 @@ void Game::Render()
 		SDL_RenderDrawLine(mRenderer, 0, y, SCREEN_WIDTH, y);
 	}
 
-	//render snake
-	SDL_SetRenderDrawColor(mRenderer, 0, 255, 0, 255);
-	for (Segment& segment : mSnake)
-	{
-		SDL_Rect rect{
-			static_cast<int>(segment.pos.x),
-			static_cast<int>(segment.pos.y),
-			CELL_SIZE,
-			CELL_SIZE
-			};
-		SDL_RenderFillRect(mRenderer, &rect);
-	}
-	
-	////snake's outline
-	//SDL_SetRenderDrawColor(mRenderer, 20, 100, 0, 255);
-	//for (Segment& segment : mSnake)
-	//{
-	//	SDL_Rect outlineRect{
-	//		static_cast<int>(segment.pos.x),
-	//		static_cast<int>(segment.pos.y),
-	//		CELL_SIZE,
-	//		CELL_SIZE
-	//	};
-	//	SDL_RenderDrawRect(mRenderer, &outlineRect);
-	//}
-
 	//render fruit
 	SDL_SetRenderDrawColor(mRenderer, 255, 0, 0, 255);
 	SDL_Rect fruitRect{
-		mFruitPos.x,
-		mFruitPos.y,
+		mFruitPos.x * CELL_SIZE,
+		mFruitPos.y * CELL_SIZE,
 		CELL_SIZE,
 		CELL_SIZE
 	};
 	SDL_RenderFillRect(mRenderer, &fruitRect);
 
-	//Swap front and back buffers
-	SDL_RenderPresent(mRenderer);
-}
+	if (mState == GAME_OVER)
+	{
+		std::string restartText = "Press space to restart";
+		mTextGenerator.Render(mRenderer, std::move(restartText), 0.32 * SCREEN_WIDTH, 0.4 * SCREEN_WIDTH);
+	}
 
-void Game::MoveSnake(float deltaTime)
-{
+	//render snake
+	SDL_SetRenderDrawColor(mRenderer, 0, 255, 0, 255);
 	for (Segment& segment : mSnake)
 	{
-		segment.pos.x += segment.direction.x * SNAKE_SPEED * deltaTime;
-		segment.pos.y += segment.direction.y * SNAKE_SPEED * deltaTime;
+		//Linearly interpolate between each segment's current grid position and next grid position to give smooth grid motion
+		float screenPosX = (static_cast<float>(segment.pos.x) + ((TIME_PER_CELL - mMoveTimer) / TIME_PER_CELL) * static_cast<float>(segment.direction.x)) * static_cast<float>(CELL_SIZE);
+		float screenPosY = (static_cast<float>(segment.pos.y) + ((TIME_PER_CELL - mMoveTimer) / TIME_PER_CELL) * static_cast<float>(segment.direction.y)) * static_cast<float>(CELL_SIZE);
+		SDL_Rect rect{
+			static_cast<int>(screenPosX),
+			static_cast<int>(screenPosY),
+			CELL_SIZE,
+			CELL_SIZE
+			};
+		SDL_RenderFillRect(mRenderer, &rect);
 	}
 
-	//Update the snake's segments (excluding the head)
-	for (std::vector<Segment>::reverse_iterator iter = mSnake.rbegin(); iter < mSnake.rend() - 1; ++iter)
+	//This removes the jagged edges that are seen when a snake with more than one segment changes direction
+	if (mSnake.size() > 1)
 	{
-		iter->direction = (iter + 1)->direction;
+		SDL_SetRenderDrawColor(mRenderer, 0, 255, 0, 255);
+		SDL_Rect rect{ 0,0,CELL_SIZE,CELL_SIZE };
+		for (decltype(mSnake.size()) i = 0; i < mSnake.size() - 1; ++i)
+		{
+			rect.x = mSnake[i].pos.x * CELL_SIZE;
+			rect.y = mSnake[i].pos.y * CELL_SIZE;
+			SDL_RenderFillRect(mRenderer, &rect);
+		}
 	}
+
+	//Swap front and back buffers
+	SDL_RenderPresent(mRenderer);
 }
 
 void Game::CheckCollisions()
@@ -202,21 +238,20 @@ void Game::CheckCollisions()
 	//Check if snake head has collided with a wall, its tail, or the fruit
 	//wall
 	Segment head = mSnake[0];
-	if (head.pos.x < 0 || head.pos.x > SCREEN_WIDTH - CELL_SIZE || head.pos.y < 0 || head.pos.y > SCREEN_HEIGHT - CELL_SIZE)
+	if (head.pos.x < 0 || head.pos.x > GRID_WIDTH - 1 || head.pos.y < 0 || head.pos.y > GRID_HEIGHT - 1)
 	{
-		//PlaySound()
+		mSoundManager.PlaySound(SOUND_ID::GAME_OVER);
 		mState = GAME_OVER;
 		Reset();
-
 		return;
 	}
 
 	//tail
-	for (std::vector<Segment>::size_type i = 1; i < mSnake.size(); ++i)
+	for (std::vector<Segment>::size_type i = 2; i < mSnake.size(); ++i)
 	{
 		if (head.pos.x == mSnake[i].pos.x && head.pos.y == mSnake[i].pos.y)
 		{
-			//PlaySound();
+			mSoundManager.PlaySound(SOUND_ID::GAME_OVER);
 			mState = GAME_OVER;
 			Reset();
 			return;
@@ -225,10 +260,10 @@ void Game::CheckCollisions()
 
 	if (head.pos.x == mFruitPos.x && head.pos.y == mFruitPos.y)
 	{
-		//PlaySound();
+		mSoundManager.PlaySound(SOUND_ID::EAT_FRUIT);
 		Segment newSegment{ mSnake.back().pos.x, mSnake.back().pos.y, 0, 0 };
 		mSnake.push_back(std::move(newSegment));
-		//InitFruit();
+		InitFruit();
 		++mScore;
 		if (mScore > mHiScore)
 		{
@@ -240,6 +275,32 @@ void Game::CheckCollisions()
 void Game::Reset()
 {
 	mSnake.clear();
-	Segment head{ (SCREEN_WIDTH - CELL_SIZE) / 2, (SCREEN_HEIGHT - CELL_SIZE) / 2, 0, 0 };
+	Segment head{ GRID_WIDTH / 2, GRID_HEIGHT / 2, 0, 0 };
 	mSnake.push_back(std::move(head));
+	mScore = 0;
+	mMoveTimer = TIME_PER_CELL;
+}
+
+void Game::InitFruit()
+{
+	bool validPos = true;
+	std::uniform_int_distribution<unsigned> uX(0, GRID_WIDTH-1);
+	std::uniform_int_distribution<unsigned> uY(0, GRID_HEIGHT-1);
+	std::default_random_engine e(SDL_GetTicks());
+	do
+	{
+		validPos = true;
+		int newX = uX(e);
+		int newY = uY(e);
+		auto found = std::find_if(mSnake.begin(), mSnake.end(), [newX, newY](Segment& s) {return s.pos.x == newX && s.pos.y == newY; });
+		if (found != mSnake.end())
+		{
+			validPos = false;
+		}
+		else
+		{
+			mFruitPos.x = newX;
+			mFruitPos.y = newY;
+		}
+	} while (!validPos);
 }

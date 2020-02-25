@@ -8,4 +8,6 @@ const int GRID_HEIGHT = 15;
 const int SEGMENT_SIZE = 20;
 const int FRUIT_SIZE = 20;
 
-const float SNAKE_SPEED = 100.0f;
+//Speed in cells/second
+const float SNAKE_SPEED = 7.0f;
+const float TIME_PER_CELL = 1 / SNAKE_SPEED;

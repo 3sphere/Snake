@@ -1,6 +1,8 @@
 #pragma once
 #include <SDL.h>
 #include <vector>
+#include "SoundManager.h"
+#include "TextGenerator.h"
 
 enum State {GAME_ACTIVE, GAME_OVER};
 
@@ -33,12 +35,15 @@ private:
 	void Update();
 	void Render();
 
-	void MoveSnake(float deltaTime);
 	void CheckCollisions();
 	void Reset();
+	void InitFruit();
 
 	SDL_Window* mWindow;
 	SDL_Renderer* mRenderer;
+
+	SoundManager mSoundManager;
+	TextGenerator mTextGenerator;
 
 	bool mIsRunning;
 	State mState;
@@ -50,4 +55,6 @@ private:
 	Vector2i mNewDirection;
 
 	Uint32 mTicksCount;
+	float mMoveTimer;
+	float mResetTimer;
 };

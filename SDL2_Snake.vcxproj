@@ -138,10 +138,14 @@
   <ItemGroup>
     <ClCompile Include="src\Game.cpp" />
     <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\SoundManager.cpp" />
+    <ClCompile Include="src\TextGenerator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Constants.h" />
     <ClInclude Include="src\Game.h" />
+    <ClInclude Include="src\SoundManager.h" />
+    <ClInclude Include="src\TextGenerator.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
