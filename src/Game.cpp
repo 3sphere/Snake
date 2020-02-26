@@ -172,7 +172,7 @@ void Game::Render()
 	scoreText.clear();
 	scoreText = " High score: " + std::to_string(mHiScore);
 	mTextGenerator.Render(mRenderer, scoreText, 0.75 * SCREEN_WIDTH, 0);
-
+	
 	//render grid
 	SDL_SetRenderDrawColor(mRenderer, 76, 76, 76, 255);
 	for (int x = 0; x < SCREEN_WIDTH; x += CELL_SIZE)
