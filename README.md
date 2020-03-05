@@ -8,3 +8,5 @@ W: Move snake up
 S: Move snake down  
 A: Move snake left  
 D: Move snake right  
+
+![alt text](https://github.com/3sphere/Snake/blob/master/screenshot.png "screenshot")
