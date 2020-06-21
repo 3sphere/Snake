@@ -51,7 +51,7 @@ bool TextGenerator::CreateTextTexture(SDL_Renderer* renderer, const std::string&
 {
 	FreeTexture();
 
-	SDL_Surface* textSurface = TTF_RenderText_Solid(mFont, text.c_str(), SDL_Color{ 255,255,255,255 });
+	SDL_Surface* textSurface = TTF_RenderText_Blended(mFont, text.c_str(), SDL_Color{ 255,255,255,255 });
 	if (!textSurface)
 	{
 		SDL_Log("Failed to create text surface. Error: %s\n", TTF_GetError());

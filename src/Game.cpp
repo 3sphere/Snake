@@ -167,11 +167,11 @@ void Game::Render()
 	SDL_SetRenderDrawColor(mRenderer, 0, 0, 0, 255);
 	SDL_RenderClear(mRenderer);
 
-	std::string scoreText = "Score: " + std::to_string(mScore);
+	/*std::string scoreText = "Score: " + std::to_string(mScore);
 	mTextGenerator.Render(mRenderer, scoreText, 0, 0);
 	scoreText.clear();
 	scoreText = " High score: " + std::to_string(mHiScore);
-	mTextGenerator.Render(mRenderer, scoreText, 0.75 * SCREEN_WIDTH, 0);
+	mTextGenerator.Render(mRenderer, scoreText, 0.75 * SCREEN_WIDTH, 0);*/
 	
 	//render grid
 	SDL_SetRenderDrawColor(mRenderer, 76, 76, 76, 255);
@@ -228,6 +228,12 @@ void Game::Render()
 			SDL_RenderFillRect(mRenderer, &rect);
 		}
 	}
+
+	std::string scoreText = "Score: " + std::to_string(mScore);
+	mTextGenerator.Render(mRenderer, scoreText, 0, 0);
+	scoreText.clear();
+	scoreText = " High score: " + std::to_string(mHiScore);
+	mTextGenerator.Render(mRenderer, scoreText, 0.75 * SCREEN_WIDTH, 0);
 
 	//Swap front and back buffers
 	SDL_RenderPresent(mRenderer);
