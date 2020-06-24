@@ -166,12 +166,6 @@ void Game::Render()
 	//Clear back buffer
 	SDL_SetRenderDrawColor(mRenderer, 0, 0, 0, 255);
 	SDL_RenderClear(mRenderer);
-
-	/*std::string scoreText = "Score: " + std::to_string(mScore);
-	mTextGenerator.Render(mRenderer, scoreText, 0, 0);
-	scoreText.clear();
-	scoreText = " High score: " + std::to_string(mHiScore);
-	mTextGenerator.Render(mRenderer, scoreText, 0.75 * SCREEN_WIDTH, 0);*/
 	
 	//render grid
 	SDL_SetRenderDrawColor(mRenderer, 76, 76, 76, 255);
@@ -264,6 +258,7 @@ void Game::CheckCollisions()
 		}
 	}
 
+	// fruit
 	if (head.pos.x == mFruitPos.x && head.pos.y == mFruitPos.y)
 	{
 		mSoundManager.PlaySound(SOUND_ID::EAT_FRUIT);
@@ -289,6 +284,8 @@ void Game::Reset()
 
 void Game::InitFruit()
 {
+	// Initialise the fruit's position to a random location, making sure it doesn't spawn on top of
+	// the snake
 	bool validPos = true;
 	std::uniform_int_distribution<unsigned> uX(0, GRID_WIDTH-1);
 	std::uniform_int_distribution<unsigned> uY(0, GRID_HEIGHT-1);
