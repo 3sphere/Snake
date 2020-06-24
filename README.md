@@ -6,7 +6,7 @@ This is my attempt to recreate the game [*Snake*](https://www.google.com/fbx?fbx
 
 ![Screenshot](https://github.com/3sphere/Snake/blob/master/screenshot.png)  
 
-Video demo: https://youtu.be/X29rk-Rjf0A  
+Video: https://youtu.be/X29rk-Rjf0A  
 
 ### Libraries used
 **SDL 2.0** for windowing and rendering of simple graphics  
