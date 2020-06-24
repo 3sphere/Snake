@@ -8,6 +8,11 @@ This is my attempt to recreate the game [Snake](https://www.google.com/fbx?fbx=s
 
 Video demo: https://youtu.be/X29rk-Rjf0A  
 
+### Libraries used
+**SDL 2.0** for windowing and rendering of simple graphics  
+**SDL_mixer 2.0** for sounds  
+**SDL_ttf 2.0** for displaying text  
+
 ### Controls
 
 W: Move up  
