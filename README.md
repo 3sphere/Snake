@@ -1,8 +1,6 @@
 # Snake
 
-## About
-
-This is my attempt to recreate the game [*Snake*](https://www.google.com/fbx?fbx=snake_arcade) using C++. The goal of this project was to create another simple game with C++ but with slightly more complex logic than [Pong](https://github.com/3sphere/Pong).
+A clone of the the game [*Snake*](https://www.google.com/fbx?fbx=snake_arcade) written in C++.
 
 ![Screenshot](https://github.com/3sphere/Snake/blob/master/screenshot.png)  
 
